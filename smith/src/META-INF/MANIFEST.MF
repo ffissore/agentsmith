@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Agent-Class: it.fridrik.agent.Smith
+Premain-Class: it.fridrik.agent.Smith
+Can-Redefine-Classes: true

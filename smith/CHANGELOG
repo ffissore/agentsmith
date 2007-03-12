@@ -1,0 +1,6 @@
+0.5
+   FileMonitor is now handled by a 
+   SingleThreadScheduledExecutor instead of the raw 
+   Thread.start and Thread.sleep
+   
+   Javadoc added

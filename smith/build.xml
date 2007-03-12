@@ -1,0 +1,62 @@
+<project name="smith" default="dist" basedir=".">
+
+	<property file="build.properties" />
+
+	<property name="version" value="0.5" />
+	<property name="jar.name" value="${ant.project.name}-${version}" />
+	<property name="folder.build" value="build" />
+	<property name="folder.dist" value="dist" />
+	<property name="folder.javadoc" value="javadoc" />
+	<property name="javac.version" value="6" />
+
+	<target name="prepare">
+		<mkdir dir="${folder.build}" />
+		<mkdir dir="${folder.dist}" />
+		<mkdir dir="${folder.javadoc}" />
+	</target>
+
+	<target name="build5" depends="prepare" description="Compile Smith with java5 only support">
+		<javac srcdir="src" debug="true" destdir="${folder.build}">
+			<include name="**/*.java" />
+			<exclude name="**/it/fridrik/agent/SmithLoader.java" />
+		</javac>
+	</target>
+
+	<target name="build6" depends="prepare" description="Compile Smith with java5+ support">
+		<javac srcdir="src" debug="true" destdir="${folder.build}">
+			<include name="**/*.java" />
+		</javac>
+	</target>
+
+	<target name="dist" description="Creates Smith.jar">
+		<antcall target="build${javac.version}" />
+		<jar basedir="${folder.build}" jarfile="${folder.dist}/${jar.name}.jar" manifest="src/META-INF/MANIFEST.MF" />
+	</target>
+
+	<target name="javadoc5" depends="prepare" description="Generates java5 version javadoc">
+		<javadoc packagenames="it.fridrik.*" destdir="${folder.javadoc}" author="true" version="true" use="true" windowtitle="${ant.project.name} ${version}" doctitle="${ant.project.name} ${version}">
+			<fileset dir="src" defaultexcludes="yes">
+				<include name="**/*.java" />
+				<exclude name="**/it/fridrik/agent/SmithLoader.java" />
+			</fileset>
+			<link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+		</javadoc>
+	</target>
+
+	<target name="javadoc6" depends="prepare" description="Generates java5+ version javadoc">
+		<javadoc packagenames="it.fridrik.*" sourcepath="src" destdir="${folder.javadoc}" author="true" version="true" use="true" windowtitle="${ant.project.name} ${version}" doctitle="${ant.project.name} ${version}">
+			<link href="http://java.sun.com/javase/6/docs/api/" />
+		</javadoc>
+	</target>
+
+	<target name="javadoc" description="Generates javadoc">
+		<antcall target="javadoc${javac.version}" />
+	</target>
+
+	<target name="clean" description="Cleans up">
+		<delete dir="${folder.build}" />
+		<delete dir="${folder.dist}" />
+		<delete dir="${folder.javadoc}" />
+	</target>
+
+</project>
