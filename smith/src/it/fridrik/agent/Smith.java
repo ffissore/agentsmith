@@ -90,7 +90,8 @@ public class Smith implements FileModifiedListener {
 	 */
 	public Smith(Instrumentation inst, String folder) {
 		this.inst = inst;
-		this.folder = folder;
+		this.folder = folder.endsWith(File.separator) ? folder : folder
+				+ File.separator;
 
 		FileMonitor fileMonitor = new FileMonitor(folder, "class");
 		fileMonitor.addModifiedListener(this);
