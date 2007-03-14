@@ -97,7 +97,7 @@ public class Smith implements FileModifiedListener {
 		fileMonitor.addModifiedListener(this);
 
 		service = Executors.newSingleThreadScheduledExecutor();
-		service.scheduleWithFixedDelay(fileMonitor, 0, 500, TimeUnit.MILLISECONDS);
+		service.scheduleWithFixedDelay(fileMonitor, 0, 1, TimeUnit.SECONDS);
 	}
 
 	/**
