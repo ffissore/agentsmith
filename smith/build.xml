@@ -2,7 +2,7 @@
 
 	<property file="build.properties" />
 
-	<property name="version" value="0.5.1" />
+	<property name="version" value="0.6" />
 	<property name="jar.name" value="${ant.project.name}-${version}" />
 	<property name="folder.build" value="build" />
 	<property name="folder.dist" value="dist" />
