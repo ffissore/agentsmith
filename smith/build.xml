@@ -19,6 +19,7 @@
 		<javac srcdir="src" debug="true" destdir="${folder.build}">
 			<include name="**/*.java" />
 			<exclude name="**/it/fridrik/agent/SmithLoader.java" />
+			<exclude name="**/it/fridrik/agent/servlet/*.java" />
 		</javac>
 	</target>
 
