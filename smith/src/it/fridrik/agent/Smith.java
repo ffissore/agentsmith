@@ -62,10 +62,20 @@ public class Smith implements FileModifiedListener {
 
 	private static void initialize(String agentArgs, Instrumentation inst) {
 		String folder = null;
+		int period = 0;
 		if (agentArgs != null) {
-			folder = agentArgs;
+			String[] sa = agentArgs.split(",");
+			folder = sa[0];
+			if (sa.length > 1) {
+				try {
+					period = Integer.parseInt(sa[1]);
+				} catch (NumberFormatException e) {
+					period = -1;
+				}
+			}
 		}
-		Smith smith = new Smith(inst, folder);
+
+		Smith smith = new Smith(inst, folder, period);
 		smiths.add(smith);
 	}
 
@@ -87,17 +97,28 @@ public class Smith implements FileModifiedListener {
 	 *          the instrumentation implementation
 	 * @param folder
 	 *          the folder to monitor
+	 * @param period
+	 *          the period between a class folder check and one another. Must be
+	 *          greter than 500 to be accepted
 	 */
-	public Smith(Instrumentation inst, String folder) {
+	public Smith(Instrumentation inst, String folder, int period) {
 		this.inst = inst;
 		this.folder = folder.endsWith(File.separator) ? folder : folder
 				+ File.separator;
+		int monitorPeriod = 500;
+		if (period > monitorPeriod) {
+			monitorPeriod = period;
+		}
 
 		FileMonitor fileMonitor = new FileMonitor(folder, "class");
 		fileMonitor.addModifiedListener(this);
 
 		service = Executors.newSingleThreadScheduledExecutor();
-		service.scheduleWithFixedDelay(fileMonitor, 0, 1, TimeUnit.SECONDS);
+		service.scheduleWithFixedDelay(fileMonitor, 0, monitorPeriod,
+				TimeUnit.MILLISECONDS);
+
+		log.info("Smith: watching folder: " + folder);
+		log.info("Smith: period between checks (ms): " + period);
 	}
 
 	/**
@@ -132,7 +153,9 @@ public class Smith implements FileModifiedListener {
 	public void fileModified(FileEvent event) {
 		String className = event.getSource().replace(".class", "").replace(
 				File.separatorChar, '.');
+		
 		Class[] loadedClasses = inst.getAllLoadedClasses();
+		
 		for (Class<?> clazz : loadedClasses) {
 			if (clazz.getName().equals(className)) {
 				try {

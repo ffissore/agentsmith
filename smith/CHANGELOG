@@ -1,8 +1,14 @@
+0.6.1
+	SmithServlet is now shipped in a dedicated jar. Example piece of web.xml
+	available with the javadoc
+	It now possible to specify monitor period.
+	Code review.
+
 0.5.1
-	Trailing slash is no more mandatory. Smith will add it if missing
+	Trailing slash is no more mandatory. Smith will add it if missing.
 
 0.5
-	FileMonitor is now handled by a 	SingleThreadScheduledExecutor instead of 
-	the raw Thread.start and Thread.sleep
+	FileMonitor is now handled by a SingleThreadScheduledExecutor instead
+	of the raw Thread.start and Thread.sleep
 
-	Javadoc added
+	Javadoc added.

@@ -18,8 +18,13 @@
  */
 package it.fridrik.filemonitor;
 
+/**
+ * Signals the modification of an existing file
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
 public interface FileModifiedListener {
 
 	public void fileModified(FileEvent event);
-	
+
 }

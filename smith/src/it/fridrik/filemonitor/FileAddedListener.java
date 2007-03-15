@@ -18,8 +18,13 @@
  */
 package it.fridrik.filemonitor;
 
+/**
+ * Signals the addition of a new file
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
 public interface FileAddedListener {
 
 	public void fileAdded(FileEvent event);
-	
+
 }

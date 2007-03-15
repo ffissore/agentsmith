@@ -18,8 +18,13 @@
  */
 package it.fridrik.filemonitor;
 
+/**
+ * Signals the deletion of a file
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
 public interface FileDeletedListener {
 
 	public void fileDeleted(FileEvent event);
-	
+
 }

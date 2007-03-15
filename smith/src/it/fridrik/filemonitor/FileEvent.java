@@ -20,6 +20,11 @@ package it.fridrik.filemonitor;
 
 import java.util.EventObject;
 
+/**
+ * Raised every time a file is added, deleted or modified
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
 public class FileEvent extends EventObject {
 
 	private static final long serialVersionUID = 4696923746078504205L;

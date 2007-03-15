@@ -2,8 +2,9 @@
 
 	<property file="build.properties" />
 
-	<property name="version" value="0.6" />
+	<property name="version" value="0.6.1" />
 	<property name="jar.name" value="${ant.project.name}-${version}" />
+	<property name="servlet.jar.name" value="${ant.project.name}-servlet-${version}" />
 	<property name="folder.build" value="build" />
 	<property name="folder.dist" value="dist" />
 	<property name="folder.javadoc" value="javadoc" />
@@ -29,9 +30,23 @@
 		</javac>
 	</target>
 
-	<target name="dist" description="Creates Smith.jar">
+	<target name="dist5">
 		<antcall target="build${javac.version}" />
-		<jar basedir="${folder.build}" jarfile="${folder.dist}/${jar.name}.jar" manifest="src/META-INF/MANIFEST.MF" />
+		<jar basedir="${folder.build}" jarfile="${folder.dist}/${jar.name}.jar" manifest="src/META-INF/MANIFEST.MF">
+			<exclude name="**/it/fridrik/agent/servlet/*" />
+		</jar>
+	</target>
+
+	<target name="dist6">
+		<antcall target="dist5" />
+		<jar basedir="${folder.build}" jarfile="${folder.dist}/${servlet.jar.name}.jar">
+			<include name="**/it/fridrik/agent/servlet/*" />
+		</jar>
+	</target>
+
+	<target name="dist" description="Creates a Smith distribution">
+		<antcall target="dist${javac.version}" />
+		<antcall target="javadoc${javac.version}" />
 	</target>
 
 	<target name="javadoc5" depends="prepare" description="Generates java5 version javadoc">
@@ -39,6 +54,7 @@
 			<fileset dir="src" defaultexcludes="yes">
 				<include name="**/*.java" />
 				<exclude name="**/it/fridrik/agent/SmithLoader.java" />
+				<exclude name="**/it/fridrik/agent/servlet/*.java" />
 			</fileset>
 			<link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
 		</javadoc>
