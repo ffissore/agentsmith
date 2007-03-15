@@ -118,7 +118,7 @@ public class Smith implements FileModifiedListener {
 				TimeUnit.MILLISECONDS);
 
 		log.info("Smith: watching folder: " + folder);
-		log.info("Smith: period between checks (ms): " + period);
+		log.info("Smith: period between checks (ms): " + monitorPeriod);
 	}
 
 	/**
