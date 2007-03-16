@@ -28,7 +28,8 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
 
 /**
  * SmithLoader loads a Smith agent after the jvm start up. This class is
- * experimental. See {@link #hotStart(String, String, int)} for more details.
+ * experimental. See {@link #hotStart(String, String, String, int)} for more
+ * details.
  * 
  * @author Federico Fissore (federico@fsfe.org)
  */
@@ -49,17 +50,18 @@ public class SmithLoader {
 	 * 
 	 * @param pathToSmithJar
 	 *          the absolute path to the Smith jar
-	 * @param folderToWatch
-	 *          the absolute path of the folder to watch (mind to put a trailing
-	 *          slash at the end)
+	 * @param classesFolder
+	 *          the absolute path of the folder to watch
+	 * @param jarFolder
+	 *          the absolute path of the folder to watch
 	 * @param monitorPeriod
 	 *          the period between a class folder check and one another. Must be
 	 *          greter than 500 to be accepted
 	 * @throws Exception
 	 *           if something goes wrong
 	 */
-	public static void hotStart(String pathToSmithJar, String folderToWatch,
-			int monitorPeriod) throws Exception {
+	public static void hotStart(String pathToSmithJar, String classesFolder,
+			String jarFolder, int monitorPeriod) throws Exception {
 		List<VirtualMachineDescriptor> vmds = new LinkedList<VirtualMachineDescriptor>(
 				VirtualMachine.list());
 		Collections.sort(vmds, new Comparator<VirtualMachineDescriptor>() {
@@ -71,8 +73,10 @@ public class SmithLoader {
 
 		});
 
+		SmithArgs args = new SmithArgs(classesFolder, jarFolder, monitorPeriod);
+
 		VirtualMachine vm = VirtualMachine.attach(vmds.get(0));
-		vm.loadAgent(pathToSmithJar, folderToWatch + "," + monitorPeriod);
+		vm.loadAgent(pathToSmithJar, args.toString());
 	}
 
 }

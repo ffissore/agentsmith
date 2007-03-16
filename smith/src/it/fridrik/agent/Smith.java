@@ -22,15 +22,20 @@ import it.fridrik.filemonitor.FileEvent;
 import it.fridrik.filemonitor.FileModifiedListener;
 import it.fridrik.filemonitor.FileMonitor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.util.Enumeration;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,21 +66,14 @@ public class Smith implements FileModifiedListener {
 	}
 
 	private static void initialize(String agentArgs, Instrumentation inst) {
-		String folder = null;
-		int period = 0;
-		if (agentArgs != null) {
-			String[] sa = agentArgs.split(",");
-			folder = sa[0];
-			if (sa.length > 1) {
-				try {
-					period = Integer.parseInt(sa[1]);
-				} catch (NumberFormatException e) {
-					period = -1;
-				}
-			}
+		SmithArgs args = new SmithArgs(agentArgs);
+
+		if (!args.isValid()) {
+			throw new RuntimeException(
+					"Your parameters are invalid! Check the documentation for the correct syntax");
 		}
 
-		Smith smith = new Smith(inst, folder, period);
+		Smith smith = new Smith(inst, args);
 		smiths.add(smith);
 	}
 
@@ -87,38 +85,46 @@ public class Smith implements FileModifiedListener {
 	}
 
 	private final Instrumentation inst;
-	private final String folder;
+	private final String classFolder;
+	private final String jarFolder;
 	private final ScheduledExecutorService service;
 
 	/**
-	 * Creates and starts a new Smith agent
+	 * Creates and starts a new Smith agent. Please note that periods smaller than
+	 * 500 (milliseconds) won't be considered.
 	 * 
 	 * @param inst
 	 *          the instrumentation implementation
-	 * @param folder
-	 *          the folder to monitor
-	 * @param period
-	 *          the period between a class folder check and one another. Must be
-	 *          greter than 500 to be accepted
+	 * @param args
+	 *          the {@link SmithArgs} instance
 	 */
-	public Smith(Instrumentation inst, String folder, int period) {
+	public Smith(Instrumentation inst, SmithArgs args) {
 		this.inst = inst;
-		this.folder = folder.endsWith(File.separator) ? folder : folder
-				+ File.separator;
+		this.classFolder = args.getClassFolder();
+		this.jarFolder = args.getJarFolder();
 		int monitorPeriod = 500;
-		if (period > monitorPeriod) {
-			monitorPeriod = period;
+		if (args.getPeriod() > monitorPeriod) {
+			monitorPeriod = args.getPeriod();
 		}
 
-		FileMonitor fileMonitor = new FileMonitor(folder, "class");
-		fileMonitor.addModifiedListener(this);
+		service = Executors.newScheduledThreadPool(2);
 
-		service = Executors.newSingleThreadScheduledExecutor();
+		scheduleMonitor(classFolder, "class", monitorPeriod);
+
+		if (jarFolder != null) {
+			scheduleMonitor(jarFolder, "jar", monitorPeriod);
+		}
+
+		log.info("Smith: watching class folder: " + classFolder);
+		log.info("Smith: watching jars folder: " + jarFolder);
+		log.info("Smith: period between checks (ms): " + monitorPeriod);
+	}
+
+	private void scheduleMonitor(String classFolder, String ext, int monitorPeriod) {
+		FileMonitor fileMonitor = new FileMonitor(classFolder, ext);
+		fileMonitor.addModifiedListener(this);
 		service.scheduleWithFixedDelay(fileMonitor, 0, monitorPeriod,
 				TimeUnit.MILLISECONDS);
-
-		log.info("Smith: watching folder: " + folder);
-		log.info("Smith: period between checks (ms): " + monitorPeriod);
 	}
 
 	/**
@@ -126,6 +132,71 @@ public class Smith implements FileModifiedListener {
 	 */
 	public void stop() {
 		service.shutdown();
+	}
+
+	/**
+	 * When the monitor notifies of a changed class file, Smith will redefine it
+	 */
+	public void fileModified(FileEvent event) {
+		String fileName = event.getSource();
+
+		if (fileName.endsWith(".class")) {
+			redefineClassFile(fileName);
+		} else if (fileName.endsWith(".jar")) {
+			redefineJarFile(fileName);
+		}
+	}
+
+	private void redefineJarFile(String fileName) {
+		String jarName = jarFolder + fileName;
+		try {
+			JarFile jar = new JarFile(jarName);
+			Class[] loadedClasses = inst.getAllLoadedClasses();
+			JarEntry jarEntry = null;
+			for (Enumeration<JarEntry> entries = jar.entries(); entries
+					.hasMoreElements();) {
+				jarEntry = entries.nextElement();
+				if (jarEntry.getName().endsWith(".class")) {
+					for (Class<?> clazz : loadedClasses) {
+						if (clazz.getName().equals(
+								jarEntry.getName().replace(".class", "").replace(
+										File.separatorChar, '.'))) {
+							try {
+								InputStream inputStream = jar.getInputStream(jarEntry);
+								ClassDefinition definition = new ClassDefinition(clazz,
+										toByteArray(inputStream));
+								inst.redefineClasses(new ClassDefinition[] { definition });
+							} catch (Exception e) {
+								log.log(Level.SEVERE, "error", e);
+							}
+						}
+					}
+				}
+			}
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "error", e);
+		}
+
+	}
+
+	private void redefineClassFile(String fileName) {
+		String className = fileName.replace(".class", "").replace(
+				File.separatorChar, '.');
+
+		Class[] loadedClasses = inst.getAllLoadedClasses();
+
+		for (Class<?> clazz : loadedClasses) {
+			if (clazz.getName().equals(className)) {
+				try {
+					ClassDefinition definition = new ClassDefinition(
+							clazz,
+							toByteArray(new FileInputStream(new File(classFolder + fileName))));
+					inst.redefineClasses(new ClassDefinition[] { definition });
+				} catch (Exception e) {
+					log.log(Level.SEVERE, "error", e);
+				}
+			}
+		}
 	}
 
 	/**
@@ -137,37 +208,33 @@ public class Smith implements FileModifiedListener {
 	 * @throws IOException
 	 *           if an error occurs while reading file
 	 */
-	private byte[] loadBytes(String fileName) throws IOException {
-		File file = new File(folder + fileName);
+	// private byte[] loadBytes(String fileName) throws IOException {
+	// File file = new File(classFolder + fileName);
+	//
+	// // InputStream fis = new FileInputStream(file);
+	// // byte[] result = new byte[(int) file.length()];
+	// // fis.read(result);
+	// // fis.close();
+	// //
+	// // return result;
+	// return toByteArray(new FileInputStream(file));
+	// }
+	private byte[] toByteArray(InputStream is) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-		FileInputStream fis = new FileInputStream(file);
-		byte[] result = new byte[(int) file.length()];
-		fis.read(result);
+		byte[] buffer = new byte[1024];
+		int bytesRead = 0;
+		while ((bytesRead = is.read(buffer)) != -1) {
+			byte[] tmp = new byte[bytesRead];
+			System.arraycopy(buffer, 0, tmp, 0, bytesRead);
+			baos.write(tmp);
+		}
+
+		byte[] result = baos.toByteArray();
+
+		baos.close();
+		is.close();
 
 		return result;
 	}
-
-	/**
-	 * When the monitor notifies of a changed class file, Smith will redefine it
-	 */
-	public void fileModified(FileEvent event) {
-		String className = event.getSource().replace(".class", "").replace(
-				File.separatorChar, '.');
-		
-		Class[] loadedClasses = inst.getAllLoadedClasses();
-		
-		for (Class<?> clazz : loadedClasses) {
-			if (clazz.getName().equals(className)) {
-				try {
-					ClassDefinition definition = new ClassDefinition(clazz,
-							loadBytes(event.getSource()));
-					inst.redefineClasses(new ClassDefinition[] { definition });
-				} catch (Exception e) {
-					log.log(Level.SEVERE, "error", e);
-				}
-			}
-		}
-
-	}
-
 }

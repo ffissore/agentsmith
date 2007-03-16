@@ -26,24 +26,30 @@ import javax.servlet.http.HttpServlet;
 
 /**
  * Loads Smith together with the webapp into which SmithServlet is installed.
- * You configure this servlet with the following piece of xml <br/><pre>
- * &lt;servlet&gt;
- *   &lt;servlet-name&gt;SmithServlet&lt;/servlet-name&gt;
- *   &lt;servlet-class&gt;it.fridrik.agent.servlet.SmithServlet&lt;/servlet-class&gt;
- *     &lt;init-param&gt;
- *       &lt;param-name&gt;smith.jar&lt;/param-name&gt;
- *       &lt;param-value&gt;/usr/share/smith/lib/smith.jar&lt;/param-value&gt;
- *     &lt;/init-param&gt;
- *     &lt;init-param&gt;
- *       &lt;param-name&gt;smith.path.to.watch&lt;/param-name&gt;
- *       &lt;param-value&gt;/WEB-INF/classes/&lt;/param-value&gt;
- *     &lt;/init-param&gt;
- *     &lt;init-param&gt;
- *       &lt;param-name&gt;smith.monitor.period&lt;/param-name&gt;
- *       &lt;param-value&gt;1000&lt;/param-value&gt;
- *     &lt;/init-param&gt;
- *   &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
- * &lt;/servlet&gt;
+ * You configure this servlet with the following piece of xml <br/>
+ * 
+ * <pre>
+ *  &lt;servlet&gt;
+ *    &lt;servlet-name&gt;SmithServlet&lt;/servlet-name&gt;
+ *    &lt;servlet-class&gt;it.fridrik.agent.servlet.SmithServlet&lt;/servlet-class&gt;
+ *      &lt;init-param&gt;
+ *        &lt;param-name&gt;smith.jar&lt;/param-name&gt;
+ *        &lt;param-value&gt;/usr/share/smith/lib/smith.jar&lt;/param-value&gt;
+ *      &lt;/init-param&gt;
+ *      &lt;init-param&gt;
+ *        &lt;param-name&gt;smith.classes.path&lt;/param-name&gt;
+ *        &lt;param-value&gt;/WEB-INF/classes/&lt;/param-value&gt;
+ *      &lt;/init-param&gt;
+ *      &lt;init-param&gt;
+ *        &lt;param-name&gt;smith.jars.path&lt;/param-name&gt;
+ *        &lt;param-value&gt;/WEB-INF/lib/&lt;/param-value&gt;
+ *      &lt;/init-param&gt;
+ *      &lt;init-param&gt;
+ *        &lt;param-name&gt;smith.monitor.period&lt;/param-name&gt;
+ *        &lt;param-value&gt;1000&lt;/param-value&gt;
+ *      &lt;/init-param&gt;
+ *    &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;
+ *  &lt;/servlet&gt;
  * </pre>
  * 
  * @author Federico Fissore (federico@fsfe.org)
@@ -57,11 +63,12 @@ public class SmithServlet extends HttpServlet {
 		super.init();
 
 		String smithJar = getPath("smith.jar");
-		String pathToWatch = getPath("smith.path.to.watch");
+		String classesPath = getPath("smith.classes.path");
+		String jarsPath = getPath("smith.jars.path");
 		int monitorPeriod = Integer.parseInt(getPath("smith.monitor.period"));
 
 		try {
-			SmithLoader.hotStart(smithJar, pathToWatch, monitorPeriod);
+			SmithLoader.hotStart(smithJar, classesPath, jarsPath, monitorPeriod);
 		} catch (Exception e) {
 			throw new ServletException(e);
 		}

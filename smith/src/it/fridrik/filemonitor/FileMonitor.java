@@ -39,11 +39,11 @@ public class FileMonitor implements Runnable {
 
 	private final File folder;
 	private final ExtFilenameFilter filenameFilter;
-	private Map<String, Long> fileMap;
-	final String fileExtension;
-	private List<FileAddedListener> fileAddedListeners;
-	private List<FileDeletedListener> fileDeletedListeners;
-	private List<FileModifiedListener> fileModifiedListeners;
+	private final String fileExtension;
+	private final Map<String, Long> fileMap;
+	private final List<FileAddedListener> fileAddedListeners;
+	private final List<FileDeletedListener> fileDeletedListeners;
+	private final List<FileModifiedListener> fileModifiedListeners;
 
 	class ExtFilenameFilter implements FilenameFilter {
 
@@ -108,7 +108,7 @@ public class FileMonitor implements Runnable {
 	 *          the folder to monitor
 	 */
 	protected void checkAddAndModify(File folder) {
-		for (File file : folder.listFiles(filenameFilter)) {
+		for (File file : getFiles(folder)) {
 			if (file.isDirectory()) {
 				checkAddAndModify(file);
 			} else {
@@ -126,7 +126,10 @@ public class FileMonitor implements Runnable {
 				}
 			}
 		}
+	}
 
+	public File[] getFiles(File folder) {
+		return folder.listFiles(filenameFilter);
 	}
 
 	/**
