@@ -18,6 +18,7 @@
  */
 package it.fridrik.filemonitor;
 
+import java.io.File;
 import java.util.EventObject;
 
 /**
@@ -29,8 +30,18 @@ public class FileEvent extends EventObject {
 
 	private static final long serialVersionUID = 4696923746078504205L;
 
-	public FileEvent(String path) {
-		super(path);
+	/**
+	 * Creates a new FileEvent, removing the absolute folder path supplied when
+	 * creating this instance. Therefore the event will contain the relative path
+	 * to the file
+	 * 
+	 * @param path
+	 *          the path of the file
+	 * @param basePath
+	 *          the basepath to erase from the event source
+	 */
+	public FileEvent(String path, String basePath) {
+		super(path.replace(basePath + File.separator, ""));
 	}
 
 	@Override

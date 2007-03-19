@@ -47,6 +47,7 @@ public class FileMonitor implements Runnable {
 
 	class ExtFilenameFilter implements FilenameFilter {
 
+		@SuppressWarnings("synthetic-access")
 		public boolean accept(File folder, String name) {
 			return name.endsWith(fileExtension)
 					|| new File(folder.getAbsolutePath() + File.separator + name)
@@ -76,8 +77,6 @@ public class FileMonitor implements Runnable {
 			throw new IllegalArgumentException("The parameter with value "
 					+ absoluteFolderPath + " MUST be a folder");
 		}
-
-		checkAddAndModify(folder);
 	}
 
 	public void run() {
@@ -93,7 +92,7 @@ public class FileMonitor implements Runnable {
 		for (String path : fileMap.keySet()) {
 			if (!new File(path).exists()) {
 				pathsToDelete.add(path);
-				notifyDeletedListeners(newFileEvent(path));
+				notifyDeletedListeners(new FileEvent(path, folder.getAbsolutePath()));
 			}
 		}
 		for (String path : pathsToDelete) {
@@ -104,11 +103,11 @@ public class FileMonitor implements Runnable {
 	/**
 	 * Checks for file addition and modification
 	 * 
-	 * @param folder
+	 * @param currentFolder
 	 *          the folder to monitor
 	 */
-	protected void checkAddAndModify(File folder) {
-		for (File file : getFiles(folder)) {
+	protected void checkAddAndModify(File currentFolder) {
+		for (File file : getFiles(currentFolder)) {
 			if (file.isDirectory()) {
 				checkAddAndModify(file);
 			} else {
@@ -117,12 +116,14 @@ public class FileMonitor implements Runnable {
 							.lastModified()) {
 						fileMap.put(file.getAbsolutePath(), Long.valueOf(file
 								.lastModified()));
-						notifyModifiedListeners(newFileEvent(file.getAbsolutePath()));
+						notifyModifiedListeners(new FileEvent(file.getAbsolutePath(),
+								folder.getAbsolutePath()));
 					}
 				} else {
 					fileMap
 							.put(file.getAbsolutePath(), Long.valueOf(file.lastModified()));
-					notifyAddedListeners(newFileEvent(file.getAbsolutePath()));
+					notifyAddedListeners(new FileEvent(file.getAbsolutePath(), folder
+							.getAbsolutePath()));
 				}
 			}
 		}
@@ -130,20 +131,6 @@ public class FileMonitor implements Runnable {
 
 	public File[] getFiles(File folder) {
 		return folder.listFiles(filenameFilter);
-	}
-
-	/**
-	 * Creates a new FileEvent, removing the absolute folder path supplied when
-	 * creating this instance. Therefore the event will contain the relative path
-	 * to the file
-	 * 
-	 * @param path
-	 *          the path of the file
-	 * @return a new {@link FileEvent}
-	 */
-	private FileEvent newFileEvent(String path) {
-		return new FileEvent(path.replace(
-				folder.getAbsolutePath() + File.separator, ""));
 	}
 
 	/**

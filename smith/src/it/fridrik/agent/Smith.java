@@ -21,6 +21,9 @@ package it.fridrik.agent;
 import it.fridrik.filemonitor.FileEvent;
 import it.fridrik.filemonitor.FileModifiedListener;
 import it.fridrik.filemonitor.FileMonitor;
+import it.fridrik.filemonitor.JarEvent;
+import it.fridrik.filemonitor.JarModifiedListener;
+import it.fridrik.filemonitor.JarMonitor;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.concurrent.Executors;
@@ -48,7 +52,7 @@ import java.util.logging.Logger;
  * @author Federico Fissore (federico@fsfe.org)
  * @see FileMonitor
  */
-public class Smith implements FileModifiedListener {
+public class Smith implements FileModifiedListener, JarModifiedListener {
 
 	private static Logger log = Logger.getLogger("Smith");
 
@@ -109,22 +113,21 @@ public class Smith implements FileModifiedListener {
 
 		service = Executors.newScheduledThreadPool(2);
 
-		scheduleMonitor(classFolder, "class", monitorPeriod);
+		FileMonitor fileMonitor = new FileMonitor(classFolder, "class");
+		fileMonitor.addModifiedListener(this);
+		service.scheduleWithFixedDelay(fileMonitor, 0, monitorPeriod,
+				TimeUnit.MILLISECONDS);
 
 		if (jarFolder != null) {
-			scheduleMonitor(jarFolder, "jar", monitorPeriod);
+			JarMonitor jarMonitor = new JarMonitor(jarFolder, "jar");
+			jarMonitor.addJarModifiedListener(this);
+			service.scheduleWithFixedDelay(jarMonitor, 0, monitorPeriod,
+					TimeUnit.MILLISECONDS);
 		}
 
 		log.info("Smith: watching class folder: " + classFolder);
 		log.info("Smith: watching jars folder: " + jarFolder);
 		log.info("Smith: period between checks (ms): " + monitorPeriod);
-	}
-
-	private void scheduleMonitor(String classFolder, String ext, int monitorPeriod) {
-		FileMonitor fileMonitor = new FileMonitor(classFolder, ext);
-		fileMonitor.addModifiedListener(this);
-		service.scheduleWithFixedDelay(fileMonitor, 0, monitorPeriod,
-				TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -139,87 +142,104 @@ public class Smith implements FileModifiedListener {
 	 */
 	public void fileModified(FileEvent event) {
 		String fileName = event.getSource();
+		String className = toClassName(fileName);
 
-		if (fileName.endsWith(".class")) {
-			redefineClassFile(fileName);
-		} else if (fileName.endsWith(".jar")) {
-			redefineJarFile(fileName);
-		}
-	}
-
-	private void redefineJarFile(String fileName) {
-		String jarName = jarFolder + fileName;
 		try {
-			JarFile jar = new JarFile(jarName);
-			Class[] loadedClasses = inst.getAllLoadedClasses();
-			JarEntry jarEntry = null;
-			for (Enumeration<JarEntry> entries = jar.entries(); entries
-					.hasMoreElements();) {
-				jarEntry = entries.nextElement();
-				if (jarEntry.getName().endsWith(".class")) {
-					for (Class<?> clazz : loadedClasses) {
-						if (clazz.getName().equals(
-								jarEntry.getName().replace(".class", "").replace(
-										File.separatorChar, '.'))) {
-							try {
-								InputStream inputStream = jar.getInputStream(jarEntry);
-								ClassDefinition definition = new ClassDefinition(clazz,
-										toByteArray(inputStream));
-								inst.redefineClasses(new ClassDefinition[] { definition });
-							} catch (Exception e) {
-								log.log(Level.SEVERE, "error", e);
-							}
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
+			byte[] classBytes = toByteArray(new FileInputStream(new File(classFolder
+					+ fileName)));
+			redefineClass(className, classBytes);
+		} catch (Exception e) {
 			log.log(Level.SEVERE, "error", e);
 		}
-
 	}
 
-	private void redefineClassFile(String fileName) {
-		String className = fileName.replace(".class", "").replace(
-				File.separatorChar, '.');
+	/**
+	 * When the monitor notifies of a changed jar file, Smith will redefine the
+	 * changed class file the jar contains
+	 */
+	public void jarModified(JarEvent event) {
+		String entryName = event.getEntryName();
+		String className = toClassName(entryName);
 
+		try {
+			JarFile jar = event.getSource();
+			byte[] classBytes = toByteArray(jar.getInputStream(getJarEntry(jar,
+					entryName)));
+			redefineClass(className, classBytes);
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "error", e);
+		}
+	}
+
+	/**
+	 * Redefines the specified class
+	 * 
+	 * @param className
+	 *          the class name to redefine
+	 * @param classBytes
+	 *          the new bytes array of the class
+	 * @throws ClassNotFoundException
+	 *           if the class name cannot be found
+	 * @throws UnmodifiableClassException
+	 *           if the class is unmodifiable
+	 */
+	private void redefineClass(String className, byte[] classBytes)
+			throws ClassNotFoundException, UnmodifiableClassException {
 		Class[] loadedClasses = inst.getAllLoadedClasses();
-
 		for (Class<?> clazz : loadedClasses) {
 			if (clazz.getName().equals(className)) {
-				try {
-					ClassDefinition definition = new ClassDefinition(
-							clazz,
-							toByteArray(new FileInputStream(new File(classFolder + fileName))));
-					inst.redefineClasses(new ClassDefinition[] { definition });
-				} catch (Exception e) {
-					log.log(Level.SEVERE, "error", e);
-				}
+				ClassDefinition definition = new ClassDefinition(clazz, classBytes);
+				inst.redefineClasses(new ClassDefinition[] { definition });
 			}
 		}
 	}
 
 	/**
-	 * Loads .class files as byte[]
+	 * Converts an absolute path to a file to a fully qualified class name
 	 * 
 	 * @param fileName
-	 *          the filename to load
+	 *          the absolute path of the class file
+	 * @return a fully qualified class name
+	 */
+	private static String toClassName(String fileName) {
+		return fileName.replace(".class", "").replace(File.separatorChar, '.');
+	}
+
+	/**
+	 * Gets the specified jar entry from the specified jar file
+	 * 
+	 * @param jar
+	 *          the jar file that contains the jar entry
+	 * @param entryName
+	 *          the name of the entry contained in the jar file
+	 * @return a JarEntry
+	 * @throws IllegalArgumentException
+	 *           if the specified entryname is not contained in the specified jar
+	 *           file
+	 */
+	private static JarEntry getJarEntry(JarFile jar, String entryName) {
+		JarEntry entry = null;
+		for (Enumeration<JarEntry> entries = jar.entries(); entries
+				.hasMoreElements();) {
+			entry = entries.nextElement();
+			if (entry.getName().equals(entryName)) {
+				return entry;
+			}
+		}
+		throw new IllegalArgumentException("EntryName " + entryName
+				+ " does not exist in jar " + jar);
+	}
+
+	/**
+	 * Loads .class files as byte[]
+	 * 
+	 * @param is
+	 *          the inputstream of the bytes to load
 	 * @return a byte[]
 	 * @throws IOException
 	 *           if an error occurs while reading file
 	 */
-	// private byte[] loadBytes(String fileName) throws IOException {
-	// File file = new File(classFolder + fileName);
-	//
-	// // InputStream fis = new FileInputStream(file);
-	// // byte[] result = new byte[(int) file.length()];
-	// // fis.read(result);
-	// // fis.close();
-	// //
-	// // return result;
-	// return toByteArray(new FileInputStream(file));
-	// }
-	private byte[] toByteArray(InputStream is) throws IOException {
+	private static byte[] toByteArray(InputStream is) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		byte[] buffer = new byte[1024];

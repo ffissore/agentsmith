@@ -1,3 +1,13 @@
+0.7
+	This release is NOT reverse compatible with the previous ones. You must
+	change the params you are using to start Smith from the command line as 
+	well as from the servlet. Please read the documentation.
+	
+	Smith can now monitor jar files contents. When a jar file changes, Smith 
+	will look for the changed classes and redefine them.
+	
+	Should be an release candidate for 1.0
+	
 0.6.1
 	SmithServlet is now shipped in a dedicated jar. Example piece of web.xml
 	available with the javadoc

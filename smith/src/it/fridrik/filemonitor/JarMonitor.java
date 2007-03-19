@@ -3,6 +3,8 @@ package it.fridrik.filemonitor;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -18,11 +20,13 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 	private final String fileExtension;
 	private final String absoluteFolderPath;
 	private final Map<String, Map<String, Long>> jarsMap;
+	private final List<JarModifiedListener> jarModifiedListeners;
 
 	public JarMonitor(String absoluteFolderPath, String fileExtension) {
 		this.absoluteFolderPath = absoluteFolderPath;
 		this.fileExtension = fileExtension;
 		this.jarsMap = new HashMap<String, Map<String, Long>>();
+		this.jarModifiedListeners = new LinkedList<JarModifiedListener>();
 
 		fileMonitor = new FileMonitor(absoluteFolderPath, "jar");
 		fileMonitor.addModifiedListener(this);
@@ -35,17 +39,30 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 	}
 
 	public void fileModified(FileEvent event) {
-		// TODO Auto-generated method stub
+		JarFile file = getJarFile(event);
 
+		if (file != null) {
+			Map<String, Long> jarEntries = jarsMap.get(event.getSource());
+			for (Enumeration<JarEntry> entries = file.entries(); entries
+					.hasMoreElements();) {
+				JarEntry entry = entries.nextElement();
+
+				if (!jarEntries.containsKey(entry.getName())) {
+					jarEntries.put(entry.getName(), Long.valueOf(entry.getTime()));
+				}
+
+				if (entry.getTime() != jarEntries.get(entry.getName()).longValue()) {
+					jarEntries.put(entry.getName(), Long.valueOf(entry.getTime()));
+					notifyJarModifiedListeners(new JarEvent(file, entry.getName()));
+				}
+
+			}
+
+		}
 	}
 
 	public void fileAdded(FileEvent event) {
-		JarFile file = null;
-		try {
-			file = new JarFile(absoluteFolderPath + event.getSource());
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "error", e);
-		}
+		JarFile file = getJarFile(event);
 
 		if (file != null) {
 			Map<String, Long> jarEntries = new HashMap<String, Long>();
@@ -63,6 +80,25 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 
 	public void fileDeleted(FileEvent event) {
 		jarsMap.remove(event.getSource());
+	}
+	
+	public void addJarModifiedListener(JarModifiedListener listener) {
+		jarModifiedListeners.add(listener);
+	}
+
+	private void notifyJarModifiedListeners(JarEvent event) {
+		for (JarModifiedListener listener : jarModifiedListeners) {
+			listener.jarModified(event);
+		}
+	}
+
+	private JarFile getJarFile(FileEvent event) {
+		try {
+			return new JarFile(absoluteFolderPath + event.getSource());
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "error", e);
+			return null;
+		}
 	}
 
 }
