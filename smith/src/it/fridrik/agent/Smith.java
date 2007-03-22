@@ -1,20 +1,18 @@
 /*
  * Agent Smith - A java hot class redefinition implementation
- * Copyright (C) 2007  Federico Fissore
+ * Copyright (C) 2007 Federico Fissore
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
  * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  * 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package it.fridrik.agent;
 
@@ -45,12 +43,11 @@ import java.util.logging.Logger;
 
 /**
  * Agent Smith is an agent with just one aim: redefining classes as soon as they
- * are changed by the developer, therefore making java look more like a
- * scripting language than a compiled one. The Smith class bundles together
- * Instrumentation and FileMonitor
+ * are changed. Smith bundles together Instrumentation, FileMonitor and JarMonitor
  * 
  * @author Federico Fissore (federico@fsfe.org)
  * @see FileMonitor
+ * @see JarMonitor
  */
 public class Smith implements FileModifiedListener, JarModifiedListener {
 
@@ -119,7 +116,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 				TimeUnit.MILLISECONDS);
 
 		if (jarFolder != null) {
-			JarMonitor jarMonitor = new JarMonitor(jarFolder, "jar");
+			JarMonitor jarMonitor = new JarMonitor(jarFolder);
 			jarMonitor.addJarModifiedListener(this);
 			service.scheduleWithFixedDelay(jarMonitor, 0, monitorPeriod,
 					TimeUnit.MILLISECONDS);

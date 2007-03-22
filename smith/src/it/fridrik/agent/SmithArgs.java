@@ -1,5 +1,18 @@
-/**
+/*
+ * SmithArgs: the arguments parser of Smith
+ * Copyright (C) 2007 Federico Fissore
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
  * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package it.fridrik.agent;
 
@@ -7,7 +20,13 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SmithArgs {
+/**
+ * SmithArgs takes care about the parameters you use to start Smith, parsing and
+ * making them available with some getters
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
+class SmithArgs {
 
 	private static final String KEY_CLASSES = "classes";
 	private static final String KEY_JARS = "jars";
@@ -21,12 +40,11 @@ public class SmithArgs {
 		this.classFolder = null;
 		this.jarFolder = null;
 		this.period = -1;
-
 	}
 
 	public SmithArgs(String classFolder, String jarFolder, int period) {
 		this();
-		
+
 		setClassFolder(classFolder);
 		setJarFolder(jarFolder);
 		this.period = period;

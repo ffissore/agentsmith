@@ -1,3 +1,19 @@
+/*
+ * Jar Monitor - Watches a jar folder and notify jar classes changes
+ * Copyright (C) 2007 Federico Fissore
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package it.fridrik.filemonitor;
 
 import java.io.IOException;
@@ -11,20 +27,25 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * JarMonitor uses FileMonitor to receive notifications about jar changes, then
+ * looks into the changed jar for the changed classes and then tells its
+ * listeners about the changed classes in the changed jars
+ * 
+ * @author Federico Fissore (federico@fsfe.org)
+ */
 public class JarMonitor implements FileModifiedListener, FileAddedListener,
 		FileDeletedListener, Runnable {
 
 	private final static Logger log = Logger.getLogger("JarMonitor");
 
 	private final FileMonitor fileMonitor;
-	private final String fileExtension;
 	private final String absoluteFolderPath;
 	private final Map<String, Map<String, Long>> jarsMap;
 	private final List<JarModifiedListener> jarModifiedListeners;
 
-	public JarMonitor(String absoluteFolderPath, String fileExtension) {
+	public JarMonitor(String absoluteFolderPath) {
 		this.absoluteFolderPath = absoluteFolderPath;
-		this.fileExtension = fileExtension;
 		this.jarsMap = new HashMap<String, Map<String, Long>>();
 		this.jarModifiedListeners = new LinkedList<JarModifiedListener>();
 
@@ -71,7 +92,7 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 			for (Enumeration<JarEntry> entries = file.entries(); entries
 					.hasMoreElements();) {
 				JarEntry entry = entries.nextElement();
-				if (entry.getName().endsWith(fileExtension)) {
+				if (entry.getName().endsWith("jar")) {
 					jarEntries.put(entry.getName(), Long.valueOf(entry.getTime()));
 				}
 			}
@@ -81,7 +102,7 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 	public void fileDeleted(FileEvent event) {
 		jarsMap.remove(event.getSource());
 	}
-	
+
 	public void addJarModifiedListener(JarModifiedListener listener) {
 		jarModifiedListeners.add(listener);
 	}

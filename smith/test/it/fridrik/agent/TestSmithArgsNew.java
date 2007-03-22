@@ -1,4 +1,4 @@
-package it.fridrik.agent.test;
+package it.fridrik.agent;
 
 import it.fridrik.agent.SmithArgs;
 import junit.framework.TestCase;
