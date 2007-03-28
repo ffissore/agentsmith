@@ -32,6 +32,7 @@ import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.util.Enumeration;
+import java.util.EventObject;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +54,9 @@ import java.util.logging.Logger;
 public class Smith implements FileModifiedListener, JarModifiedListener {
 
 	private static Logger log = Logger.getLogger("Smith");
+
+	/** Min period allowed */
+	private static final int MONITOR_PERIOD_MIN_VALUE = 500;
 
 	/** Lists of active Smith agents */
 	private static Vector<Smith> smiths = new Vector<Smith>();
@@ -104,7 +108,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 		this.inst = inst;
 		this.classFolder = args.getClassFolder();
 		this.jarFolder = args.getJarFolder();
-		int monitorPeriod = 500;
+		int monitorPeriod = MONITOR_PERIOD_MIN_VALUE;
 		if (args.getPeriod() > monitorPeriod) {
 			monitorPeriod = args.getPeriod();
 		}
@@ -139,10 +143,8 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * When the monitor notifies of a changed class file, Smith will redefine it
 	 */
 	public void fileModified(FileEvent event) {
-		String fileName = event.getSource();
 		try {
-			redefineClass(toClassName(fileName), new FileInputStream(new File(
-					classFolder + fileName)));
+			redefineClass(toClassName(event.getSource()), event);
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "error", e);
 		}
@@ -153,11 +155,8 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * changed class file the jar contains
 	 */
 	public void jarModified(JarEvent event) {
-		JarFile jar = event.getSource();
-		String entryName = event.getEntryName();
 		try {
-			redefineClass(toClassName(entryName), jar.getInputStream(getJarEntry(jar,
-					entryName)));
+			redefineClass(toClassName(event.getEntryName()), event);
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "error", e);
 		}
@@ -168,8 +167,9 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * 
 	 * @param className
 	 *          the class name to redefine
-	 * @param classStream
-	 *          the inputstream to the class file
+	 * @param event
+	 *          the event which contains the info to access the modified class
+	 *          files
 	 * @throws IOException
 	 *           if the inputstream is someway unreadable
 	 * @throws ClassNotFoundException
@@ -177,16 +177,42 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * @throws UnmodifiableClassException
 	 *           if the class is unmodifiable
 	 */
-	protected void redefineClass(String className, InputStream classStream)
+	protected void redefineClass(String className, EventObject event)
 			throws IOException, ClassNotFoundException, UnmodifiableClassException {
 		Class[] loadedClasses = inst.getAllLoadedClasses();
 		for (Class<?> clazz : loadedClasses) {
 			if (clazz.getName().equals(className)) {
 				ClassDefinition definition = new ClassDefinition(clazz,
-						toByteArray(classStream));
+						getByteArrayOutOf(event));
 				inst.redefineClasses(new ClassDefinition[] { definition });
 			}
 		}
+	}
+
+	/**
+	 * Factory method. Depending on the event implementation, retrieves the byte
+	 * array of the changed class
+	 * 
+	 * @param event
+	 *          the event to analize
+	 * @return the byte array of the changed class file
+	 * @throws IOException
+	 *           if some problems occur while opening the class file for reading
+	 */
+	private byte[] getByteArrayOutOf(EventObject event) throws IOException {
+		if (event instanceof FileEvent) {
+			return toByteArray(new FileInputStream(new File(classFolder
+					+ event.getSource())));
+
+		} else if (event instanceof JarEvent) {
+			JarEvent jarEvent = (JarEvent) event;
+			JarFile jar = jarEvent.getSource();
+			return toByteArray(jar.getInputStream(getJarEntry(jar, jarEvent
+					.getEntryName())));
+		}
+
+		throw new IllegalArgumentException("Event of type "
+				+ event.getClass().getName() + " is not supported");
 	}
 
 	/**
