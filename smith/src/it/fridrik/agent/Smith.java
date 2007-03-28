@@ -43,7 +43,8 @@ import java.util.logging.Logger;
 
 /**
  * Agent Smith is an agent with just one aim: redefining classes as soon as they
- * are changed. Smith bundles together Instrumentation, FileMonitor and JarMonitor
+ * are changed. Smith bundles together Instrumentation, FileMonitor and
+ * JarMonitor
  * 
  * @author Federico Fissore (federico@fsfe.org)
  * @see FileMonitor
@@ -139,12 +140,9 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 */
 	public void fileModified(FileEvent event) {
 		String fileName = event.getSource();
-		String className = toClassName(fileName);
-
 		try {
-			byte[] classBytes = toByteArray(new FileInputStream(new File(classFolder
-					+ fileName)));
-			redefineClass(className, classBytes);
+			redefineClass(toClassName(fileName), new FileInputStream(new File(
+					classFolder + fileName)));
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "error", e);
 		}
@@ -155,14 +153,11 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * changed class file the jar contains
 	 */
 	public void jarModified(JarEvent event) {
+		JarFile jar = event.getSource();
 		String entryName = event.getEntryName();
-		String className = toClassName(entryName);
-
 		try {
-			JarFile jar = event.getSource();
-			byte[] classBytes = toByteArray(jar.getInputStream(getJarEntry(jar,
+			redefineClass(toClassName(entryName), jar.getInputStream(getJarEntry(jar,
 					entryName)));
-			redefineClass(className, classBytes);
 		} catch (Exception e) {
 			log.log(Level.SEVERE, "error", e);
 		}
@@ -173,19 +168,22 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * 
 	 * @param className
 	 *          the class name to redefine
-	 * @param classBytes
-	 *          the new bytes array of the class
+	 * @param classStream
+	 *          the inputstream to the class file
+	 * @throws IOException
+	 *           if the inputstream is someway unreadable
 	 * @throws ClassNotFoundException
 	 *           if the class name cannot be found
 	 * @throws UnmodifiableClassException
 	 *           if the class is unmodifiable
 	 */
-	private void redefineClass(String className, byte[] classBytes)
-			throws ClassNotFoundException, UnmodifiableClassException {
+	protected void redefineClass(String className, InputStream classStream)
+			throws IOException, ClassNotFoundException, UnmodifiableClassException {
 		Class[] loadedClasses = inst.getAllLoadedClasses();
 		for (Class<?> clazz : loadedClasses) {
 			if (clazz.getName().equals(className)) {
-				ClassDefinition definition = new ClassDefinition(clazz, classBytes);
+				ClassDefinition definition = new ClassDefinition(clazz,
+						toByteArray(classStream));
 				inst.redefineClasses(new ClassDefinition[] { definition });
 			}
 		}

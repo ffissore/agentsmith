@@ -94,6 +94,7 @@ public class JarMonitor implements FileModifiedListener, FileAddedListener,
 				JarEntry entry = entries.nextElement();
 				if (entry.getName().endsWith("jar")) {
 					jarEntries.put(entry.getName(), Long.valueOf(entry.getTime()));
+					notifyJarModifiedListeners(new JarEvent(file, entry.getName()));
 				}
 			}
 		}
