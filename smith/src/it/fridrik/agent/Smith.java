@@ -53,7 +53,7 @@ import java.util.logging.Logger;
  */
 public class Smith implements FileModifiedListener, JarModifiedListener {
 
-	private static Logger log = Logger.getLogger("Smith");
+	private static final Logger log = Logger.getLogger("Smith");
 
 	/** Min period allowed */
 	private static final int MONITOR_PERIOD_MIN_VALUE = 500;
@@ -112,6 +112,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 		if (args.getPeriod() > monitorPeriod) {
 			monitorPeriod = args.getPeriod();
 		}
+		log.setLevel(args.getLogLevel());
 
 		service = Executors.newScheduledThreadPool(2);
 
@@ -130,6 +131,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 		log.info("Smith: watching class folder: " + classFolder);
 		log.info("Smith: watching jars folder: " + jarFolder);
 		log.info("Smith: period between checks (ms): " + monitorPeriod);
+		log.info("Smith: log level: " + log.getLevel());
 	}
 
 	/**
@@ -143,11 +145,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * When the monitor notifies of a changed class file, Smith will redefine it
 	 */
 	public void fileModified(FileEvent event) {
-		try {
-			redefineClass(toClassName(event.getSource()), event);
-		} catch (Exception e) {
-			log.log(Level.SEVERE, "error", e);
-		}
+		redefineClass(toClassName(event.getSource()), event);
 	}
 
 	/**
@@ -155,11 +153,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * changed class file the jar contains
 	 */
 	public void jarModified(JarEvent event) {
-		try {
-			redefineClass(toClassName(event.getEntryName()), event);
-		} catch (Exception e) {
-			log.log(Level.SEVERE, "error", e);
-		}
+		redefineClass(toClassName(event.getEntryName()), event);
 	}
 
 	/**
@@ -177,14 +171,21 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 	 * @throws UnmodifiableClassException
 	 *           if the class is unmodifiable
 	 */
-	protected void redefineClass(String className, EventObject event)
-			throws IOException, ClassNotFoundException, UnmodifiableClassException {
+	protected void redefineClass(String className, EventObject event) {
 		Class[] loadedClasses = inst.getAllLoadedClasses();
 		for (Class<?> clazz : loadedClasses) {
 			if (clazz.getName().equals(className)) {
-				ClassDefinition definition = new ClassDefinition(clazz,
-						getByteArrayOutOf(event));
-				inst.redefineClasses(new ClassDefinition[] { definition });
+				try {
+					ClassDefinition definition = new ClassDefinition(clazz,
+							getByteArrayOutOf(event));
+					inst.redefineClasses(new ClassDefinition[] { definition });
+
+					if (log.isLoggable(Level.FINE)) {
+						log.log(Level.FINE, "Redefined: " + clazz.getName());
+					}
+				} catch (Exception e) {
+					log.log(Level.SEVERE, "error", e);
+				}
 			}
 		}
 	}

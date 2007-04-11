@@ -19,6 +19,7 @@ package it.fridrik.agent;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * SmithArgs takes care about the parameters you use to start Smith, parsing and
@@ -26,28 +27,23 @@ import java.util.Map;
  * 
  * @author Federico Fissore (federico@fsfe.org)
  */
-class SmithArgs {
+public class SmithArgs {
 
 	private static final String KEY_CLASSES = "classes";
 	private static final String KEY_JARS = "jars";
 	private static final String KEY_PERIOD = "period";
-
+	private static final String KEY_LOG_LEVEL = "loglevel";
+	
 	private String classFolder;
 	private String jarFolder;
 	private int period;
+	private Level logLevel;
 
 	private SmithArgs() {
 		this.classFolder = null;
 		this.jarFolder = null;
 		this.period = -1;
-	}
-
-	public SmithArgs(String classFolder, String jarFolder, int period) {
-		this();
-
-		setClassFolder(classFolder);
-		setJarFolder(jarFolder);
-		this.period = period;
+		this.logLevel = Level.WARNING;
 	}
 
 	public SmithArgs(String agentArgs) {
@@ -59,6 +55,49 @@ class SmithArgs {
 			} else {
 				initOldArgs(agentArgs);
 			}
+		}
+	}
+
+	public SmithArgs(String classFolder, String jarFolder, int period,
+			String logLevel) {
+		this();
+
+		setClassFolder(classFolder);
+		setJarFolder(jarFolder);
+		setLogLevel(logLevel);
+		this.period = period;
+	}
+
+	public String getClassFolder() {
+		return classFolder;
+	}
+
+	public String getJarFolder() {
+		return jarFolder;
+	}
+
+	public Level getLogLevel() {
+		return logLevel;
+	}
+
+	public int getPeriod() {
+		return period;
+	}
+
+	private void initOldArgs(String agentArgs) {
+		String[] args = agentArgs.split(",");
+		setClassFolder(args[0]);
+
+		if (args.length > 1) {
+			setJarFolder(args[1]);
+		}
+
+		if (args.length > 2) {
+			setPeriod(args[2]);
+		}
+
+		if (args.length > 3) {
+			setLogLevel(args[3]);
 		}
 	}
 
@@ -82,31 +121,10 @@ class SmithArgs {
 			setPeriod(argsMap.get(KEY_PERIOD));
 		}
 
-	}
-
-	private void initOldArgs(String agentArgs) {
-		String[] args = agentArgs.split(",");
-		setClassFolder(args[0]);
-
-		if (args.length > 1) {
-			setJarFolder(args[1]);
+		if (argsMap.containsKey(KEY_LOG_LEVEL)) {
+			setLogLevel(argsMap.get(KEY_LOG_LEVEL));
 		}
 
-		if (args.length > 2) {
-			setPeriod(args[2]);
-		}
-	}
-
-	public String getClassFolder() {
-		return classFolder;
-	}
-
-	public String getJarFolder() {
-		return jarFolder;
-	}
-
-	public int getPeriod() {
-		return period;
 	}
 
 	public boolean isValid() {
@@ -119,6 +137,14 @@ class SmithArgs {
 
 	private void setJarFolder(String jarFolder) {
 		this.jarFolder = parseFolderPath(jarFolder);
+	}
+
+	private void setLogLevel(String logLevel) {
+		try {
+			this.logLevel = Level.parse(logLevel.trim());
+		} catch (Exception e) {
+			this.logLevel = Level.WARNING;
+		}
 	}
 
 	private void setPeriod(String period) {
@@ -140,6 +166,8 @@ class SmithArgs {
 		}
 
 		sb.append(",").append(KEY_PERIOD).append("=").append(period);
+		sb.append(",").append(KEY_LOG_LEVEL).append("=")
+				.append(logLevel.toString());
 
 		return sb.toString();
 	}
