@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class JarMonitor implements FileModifiedListener, FileAddedListener,
 		FileDeletedListener, Runnable {
 
-	private final static Logger log = Logger.getLogger("JarMonitor");
+	private final static Logger log = Logger.getLogger(JarMonitor.class.getName());
 
 	private final FileMonitor fileMonitor;
 	private final String absoluteFolderPath;

@@ -53,7 +53,7 @@ import java.util.logging.Logger;
  */
 public class Smith implements FileModifiedListener, JarModifiedListener {
 
-	private static final Logger log = Logger.getLogger("Smith");
+	private static final Logger log = Logger.getLogger(Smith.class.getName());
 
 	/** Min period allowed */
 	private static final int MONITOR_PERIOD_MIN_VALUE = 500;
