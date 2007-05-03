@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,8 +53,6 @@ import java.util.logging.Logger;
  * @see JarMonitor
  */
 public class Smith implements FileModifiedListener, JarModifiedListener {
-
-	private static final Logger log = Logger.getLogger(Smith.class.getName());
 
 	/** Min period allowed */
 	private static final int MONITOR_PERIOD_MIN_VALUE = 500;
@@ -90,6 +89,7 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 		}
 	}
 
+	private static final Logger log = Logger.getLogger(Smith.class.getName());
 	private final Instrumentation inst;
 	private final String classFolder;
 	private final String jarFolder;
@@ -112,7 +112,11 @@ public class Smith implements FileModifiedListener, JarModifiedListener {
 		if (args.getPeriod() > monitorPeriod) {
 			monitorPeriod = args.getPeriod();
 		}
+		log.setUseParentHandlers(false);
 		log.setLevel(args.getLogLevel());
+		ConsoleHandler consoleHandler = new ConsoleHandler();
+		consoleHandler.setLevel(args.getLogLevel());
+		log.addHandler(consoleHandler);
 
 		service = Executors.newScheduledThreadPool(2);
 
