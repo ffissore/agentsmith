@@ -1,3 +1,6 @@
+1.0_rc1
+	Missing logs issue should be fixed now. Going RC
+
 0.9.2
 	Trying to make this logger work. Small API change. Refactoring
 	
