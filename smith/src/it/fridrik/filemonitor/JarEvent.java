@@ -22,7 +22,7 @@ import java.util.jar.JarFile;
 /**
  * Raised every time a class contained into a jar is modified
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class JarEvent extends EventObject {
 

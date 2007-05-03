@@ -19,7 +19,7 @@ package it.fridrik.filemonitor;
 /**
  * Signals the modification of a class contained into a jar
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public interface JarModifiedListener {
 

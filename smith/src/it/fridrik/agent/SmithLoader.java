@@ -28,7 +28,7 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
  * SmithLoader loads a Smith agent after the jvm start up. This class is
  * experimental. See {@link #hotStart(String, SmithArgs)} for more details.
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class SmithLoader {
 

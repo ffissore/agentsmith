@@ -31,7 +31,7 @@ import java.util.Map;
  * in this order. FileMonitor implements Runnable and expects you to start it
  * through a ScheduledExecutorService
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class FileMonitor implements Runnable {
 

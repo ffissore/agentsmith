@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * looks into the changed jar for the changed classes and then tells its
  * listeners about the changed classes in the changed jars
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class JarMonitor implements FileModifiedListener, FileAddedListener,
 		FileDeletedListener, Runnable {

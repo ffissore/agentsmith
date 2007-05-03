@@ -22,7 +22,7 @@ import java.util.EventObject;
 /**
  * Raised every time a file is added, deleted or modified
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class FileEvent extends EventObject {
 

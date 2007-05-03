@@ -25,7 +25,7 @@ import java.util.logging.Level;
  * SmithArgs takes care about the parameters you use to start Smith, parsing and
  * making them available with some getters
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public class SmithArgs {
 

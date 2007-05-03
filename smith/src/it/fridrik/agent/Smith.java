@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  * are changed. Smith bundles together Instrumentation, FileMonitor and
  * JarMonitor
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  * @see FileMonitor
  * @see JarMonitor
  */

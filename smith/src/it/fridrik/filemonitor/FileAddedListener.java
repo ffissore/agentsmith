@@ -19,7 +19,7 @@ package it.fridrik.filemonitor;
 /**
  * Signals the addition of a new file
  * 
- * @author Federico Fissore (federico@fsfe.org)
+ * @author Federico Fissore (federico@fissore.org)
  */
 public interface FileAddedListener {
 
