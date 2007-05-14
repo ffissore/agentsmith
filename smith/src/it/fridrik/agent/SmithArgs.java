@@ -26,6 +26,7 @@ import java.util.logging.Level;
  * making them available with some getters
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public class SmithArgs {
 

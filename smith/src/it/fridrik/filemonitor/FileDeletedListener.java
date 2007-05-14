@@ -20,6 +20,7 @@ package it.fridrik.filemonitor;
  * Signals the deletion of a file
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public interface FileDeletedListener {
 

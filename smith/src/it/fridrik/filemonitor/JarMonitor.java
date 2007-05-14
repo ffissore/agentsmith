@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * listeners about the changed classes in the changed jars
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public class JarMonitor implements FileModifiedListener, FileAddedListener,
 		FileDeletedListener, Runnable {

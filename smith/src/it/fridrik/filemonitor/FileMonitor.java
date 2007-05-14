@@ -32,6 +32,7 @@ import java.util.Map;
  * through a ScheduledExecutorService
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public class FileMonitor implements Runnable {
 

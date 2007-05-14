@@ -20,6 +20,7 @@ package it.fridrik.filemonitor;
  * Signals the modification of an existing file
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public interface FileModifiedListener {
 

@@ -51,6 +51,7 @@ import java.util.logging.Logger;
  * @author Federico Fissore (federico@fissore.org)
  * @see FileMonitor
  * @see JarMonitor
+ * @since 1.0
  */
 public class Smith implements FileModifiedListener, JarModifiedListener {
 

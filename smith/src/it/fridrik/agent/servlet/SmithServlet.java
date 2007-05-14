@@ -56,6 +56,7 @@ import javax.servlet.http.HttpServlet;
  * </pre>
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public class SmithServlet extends HttpServlet {
 

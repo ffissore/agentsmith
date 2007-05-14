@@ -29,6 +29,7 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
  * experimental. See {@link #hotStart(String, SmithArgs)} for more details.
  * 
  * @author Federico Fissore (federico@fissore.org)
+ * @since 1.0
  */
 public class SmithLoader {
 
